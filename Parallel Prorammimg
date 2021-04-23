@@ -1,0 +1,57 @@
+import numpy as np
+import time
+from scipy import random
+import time
+from numba import njit, set_num_threads, threading_layer, config, prange, get_num_threads
+
+config.THREADING_LAYER = 'omp'
+
+
+@njit(parallel=True)
+def mat_mul():
+    N = 5000  # int(input('Enter size of NxN matrix'))
+    A = np.zeros((N, N))
+    B = np.zeros((N, N))
+    C = np.zeros((N, N))
+
+    for i in range(N):
+        for j in range(N):
+            A[i][j] = random.uniform(0.1, 1)
+            B[i][j] = random.uniform(0.1, 1)
+
+    for i in range(N):
+        for j in range(N):
+            for k in range(N):
+                C[i][j] += A[i][k] + B[k][j]
+
+    return C
+
+
+@njit(parallel=True)
+def upp_t(multi):
+    r, c = np.shape(multi)
+    low = np.zeros((r, c))
+    upp = np.zeros((r, c))
+
+    for i in range(c):
+
+        for j in range(i, c):
+            s = 0
+
+            for k in range(i):
+                s += low[i][k] * upp[k][j]
+
+            upp[i][j] = multi[i][j] - s
+    return
+
+
+set_num_threads(6)
+check0 = time.process_time()
+multi = mat_mul()
+check1 = time.process_time()
+upp_t(multi)
+check2 = time.process_time()
+
+print(check1 - check0)
+print(check2 - check1)
+print(check2 - check0)
